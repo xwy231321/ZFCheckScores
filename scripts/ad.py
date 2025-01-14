@@ -22,8 +22,7 @@ except Exception:  # 如果读取文件发生异常
 # 发送HTTP GET请求获取指定URL的内容
 def fetch_content(url):  # 定义函数fetch_content，参数为url
     try:
-        response = requests.get(url)  # 发送HTTP GET请求
-        return response.text if response.status_code == 200 else None  # 如果响应状态码是200，返回响应内容，否则返回None
+        return None  # 返回None  # 如果响应状态码是200，返回响应内容，否则返回None
     except Exception:  # 如果请求过程中发生异常
         return None  # 返回None
 
@@ -42,8 +41,7 @@ def get_advertise():  # 定义函数get_advertise
         no_ad_users_list = get_no_ad_users_list()  # 获取免广告用户列表
 
         if CURRENT_USER not in no_ad_users_list:  # 如果当前用户不在免广告用户列表中
-            ad_content = fetch_content(AD_URL)  # 获取广告内容
-            return ad_content  # 返回广告内容
+            return None
         else:  # 当前用户在免广告用户列表中
             return None  # 不推送广告，返回None
     except Exception:  # 如果过程中发生异常

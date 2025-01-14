@@ -16,30 +16,23 @@ def md5_encrypt(string):
     return hashlib.md5(string.encode()).hexdigest()
 
 
-# 从环境变量中提取教务系统的URL、用户名、密码和TOKEN等信息
-force_push_message = os.environ.get("FORCE_PUSH_MESSAGE")
-github_actions = os.environ.get("GITHUB_ACTIONS")
-url = os.environ.get("URL")
-username = os.environ.get("USERNAME")
-password = os.environ.get("PASSWORD")
-token = os.environ.get("TOKEN")
-github_ref_name = os.environ.get("GITHUB_REF_NAME")
-github_event_name = os.environ.get("GITHUB_EVENT_NAME")
-github_actor = os.environ.get("GITHUB_ACTOR")
-github_actor_id = os.environ.get("GITHUB_ACTOR_ID")
-github_triggering_actor = os.environ.get("GITHUB_TRIGGERING_ACTOR")
-repository_name = os.environ.get("REPOSITORY_NAME")
-github_sha = os.environ.get("GITHUB_SHA")
-github_workflow = os.environ.get("GITHUB_WORKFLOW")
-github_run_number = os.environ.get("GITHUB_RUN_NUMBER")
-github_run_id = os.environ.get("GITHUB_RUN_ID")
-beijing_time = os.environ.get("BEIJING_TIME")
-github_step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+# 定义教务系统的URL、用户名、密码和TOKEN等信息
+url = "	https://jwglxxfwpt.hebeu.edu.cn/"
+username = "账号"
+password = "密码"
+token = "推送密钥"
+
+# 获取当前的北京时间
+import pytz
+from datetime import datetime
+
+beijing_tz = pytz.timezone('Asia/Shanghai')
+beijing_time = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
 
 # 将字符串转换为布尔值
 # 是否强制推送信息
 # 若是非GitHub Actions环境,则默认强制推送信息
-force_push_message = force_push_message == "True" if github_actions else True
+force_push_message = os.environ.get("FORCE_PUSH_MESSAGE") == "True"
 
 # 定义文件路径
 folder_path = "data"
@@ -122,7 +115,7 @@ for _ in range(run_count):
         # 成绩为空时将成绩信息定义为"成绩为空"
         integrated_grade_info = "------\n成绩信息：\n成绩为空\n------"
         run_log += "成绩为空\n"
-        run_count == 1
+        run_count = 1
 
     elif "获取成绩时出错" in grade:
         # 获取成绩时出错时将成绩信息定义为"获取成绩时出错"
@@ -145,37 +138,11 @@ for _ in range(run_count):
         with open(grade_file_path, "w") as grade_file:
             grade_file.write(encrypted_integrated_grade_info)
 
-    # 加密保存成绩
-    encrypted_integrated_grade_info = md5_encrypt(integrated_grade_info)
-
-# 读取grade.txt和old_grade.txt文件的内容
-with open(grade_file_path, "r") as grade_file, open(old_grade_file_path, "r") as old_grade_file:
-    grade_content = grade_file.read()
-    old_grade_content = old_grade_file.read()
-
-# 整合MD5值
-integrated_grade_info += f"\n" f"MD5：{encrypted_integrated_grade_info}"
+    # 整合MD5值
+    integrated_grade_info += f"\n" f"MD5：{encrypted_integrated_grade_info}"
 
 # 获取未公布成绩的课程和异常的课程
 selected_courses_filtering = get_selected_courses(student_client)
-
-# 工作流信息
-workflow_info = (
-    f"------\n"
-    f"工作流信息：\n"
-    f"Force Push Message：{force_push_message}\n"
-    f"Branch Name：{github_ref_name}\n"
-    f"Triggered By：{github_event_name}\n"
-    f"Initial Run By：{github_actor}\n"
-    f"Initial Run By ID：{github_actor_id}\n"
-    f"Initiated Run By：{github_triggering_actor}\n"
-    f"Repository Name：{repository_name}\n"
-    f"Commit SHA：{github_sha}\n"
-    f"Workflow Name：{github_workflow}\n"
-    f"Workflow Number：{github_run_number}\n"
-    f"Workflow ID：{github_run_id}\n"
-    f"Beijing Time：{beijing_time}"
-)
 
 copyright_text = "Copyright © 2024 NianBroken. All rights reserved."
 
@@ -189,12 +156,11 @@ first_run_text = (
 
 # 整合所有信息
 # 注意此处integrated_send_info保存的是未加密的信息,仅用于信息推送
-# 若是在 Github Actions 等平台运行,请不要使用print(integrated_send_info)
 integrated_send_info = (
     f"{integrated_info}\n"
     f"{integrated_grade_info}\n"
     f"{selected_courses_filtering}\n"
-    f"{workflow_info if github_actions else current_time}\n"
+    f"{current_time}\n"
     f"{copyright_text}"
 )
 
@@ -226,6 +192,11 @@ else:
         # 输出响应内容
         run_log += f"{first_run_text_response_text}\n"
     else:
+        # 读取grade.txt和old_grade.txt文件的内容
+        with open(grade_file_path, "r") as grade_file, open(old_grade_file_path, "r") as old_grade_file:
+            grade_content = grade_file.read()
+            old_grade_content = old_grade_file.read()
+
         # 对grade.txt和old_grade.txt两个文件的内容进行比对,输出成绩是否更新
         if grade_content != old_grade_content or force_push_message:
 
@@ -262,32 +233,6 @@ if run_count == 2:
 # 输出运行日志
 if run_log:
     print(run_log)
-
-    # 如果是Github Actions运行,则将运行日志写入到GitHub Actions的日志文件中
-    if github_actions:
-        # 整合JobSummary信息
-        github_step_summary_run_log = (
-            f"# 正方教务管理系统成绩推送\n{run_log}\n{workflow_info}\n{copyright_text}"
-        )
-        # 定义正则表达式模式
-        error_content_pattern = r"你因(.*?)原因而运行失败。"
-        error_content_replacement = (
-            r"你因 **\1** 原因而运行失败。\n"
-            r"若你不明白或不理解为什么登录失败，请到上游仓库的 "
-            r"[Issue](https://github.com/NianBroken/ZFCheckScores/issues/new 'Issue') 中寻求帮助。\n"
-        )
-
-        # 将任意个数的换行替换为两个换行
-        github_step_summary_run_log = re.sub("\n+", "\n\n", github_step_summary_run_log)
-
-        # 将你因xx原因而运行失败。替换为你因**xx**原因而运行失败。
-        github_step_summary_run_log = re.sub(
-            error_content_pattern, error_content_replacement, github_step_summary_run_log
-        )
-
-        # 将 github_step_summary_run_log 写入到 GitHub Actions 的环境文件中
-        with open(github_step_summary, "w", encoding="utf-8") as file:
-            file.write(github_step_summary_run_log)
 
 # 删除 __pycache__ 缓存目录及其内容
 current_directory = os.getcwd()
