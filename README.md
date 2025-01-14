@@ -38,19 +38,12 @@
 
 ## 使用方法
 
-### 1. [Fork](https://github.com/xwy231321/ZFCheckScores/fork "Fork") 本仓库
+### 1、拉取本项目到服务器，并为其创建docker容器，在容器内安装依赖
 
-`Fork` → `Create fork`
-
-### 2. 开启 工作流读写权限
-
-`Settings` → `Actions` → `General` → `Workflow permissions` →`Read and write permissions` →`Save`
-
-### 3. 添加 Secrets
-
-`Settings` → `Secrets and variables` → `Actions` → `Secrets` → `Repository secrets` → `New repository secret` → `Add secret`
-
-> Name = Name，Secret = 例子
+```
+pip install -r requirements.txt
+``` 
+### 2、修改文件main.py中的配置信息，填入自己的教务系统用户名（学号）、密码、Showdoc 的 token
 
 | Name     | 例子                        | 说明                                                                      |
 | -------- | --------------------------- | ------------------------------------------------------------------------- |
@@ -59,17 +52,14 @@
 | PASSWORD | 对应的密码                | 教务系统密码                                                              |
 | TOKEN    | "server/api/push/"后面的内容        | [Showdoc 的 token](https://push.showdoc.com.cn/#/push "Showdoc 的 token") |
 
-### 4. 开启 Actions
+### 3、运行程序，使用计划任务，每三十分钟执行一次
 
-`Actions` → `I understand my workflows, go ahead and enable them` → `CheckScores` → `Enable workflow`
-
-### 5. 运行 程序
-
-`Actions` → `CheckScores` → `Run workflow`
+```
+python main.py
+```
 
 _若你的程序正常运行且未报错，那么在此之后，程序将会每隔 30 分钟自动检测一次成绩是否有更新_
 
-_若你看不懂上述使用方法，你可以查看[详细使用方法](https://nianbroken.github.io/ZFCheckScores/ "详细使用方法")_
 
 ## 程序逻辑
 
