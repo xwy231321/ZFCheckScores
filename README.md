@@ -1,87 +1,36 @@
-# 正方教务管理系统成绩推送——河工程适配分支
+# 项目说明
 
-<img src="https://raw.githubusercontent.com/xwy231321/ZFCheckScores/main/img/7.jpg" style="zoom:60%;" />
+安装依赖，运行程序web.py
 
-## 简介
+```
+pip install -r requirements.txt
+python web.py 
+```
 
-**使用本项目前：**
+启动后访问 http://127.0.0.1:5000/get_data?username=你的学号&password=你的密码  即会返回完整json信息
 
-早晨睡醒看一遍教务系统、上厕所看一遍教务系统、刷牙看一遍教务系统、洗脸看一遍教务系统、吃早餐看一遍教务系统、吃午饭看一遍教务系统、睡午觉前看一遍教务系统、午觉醒来看一遍教务系统、出门前看一遍教务系统、吃晚饭看一遍教务系统、洗澡看一遍教务系统、睡觉之前看一遍教务系统
+正常情况下获取到的json内容为：
 
-**使用本项目后：**
+```
+{
+"allinfo":详细的个人信息,
+"notifications": 通知消息,
+"current_time": 查询时间,
+"integrated_info": 简略个人信息,
+"integrated_grade_info": 成绩信息（处理后）,
+"selected_courses_filtering": 未公布成绩的课程和异常的课程,
+"run_log": 运行日志（暂未遇到非空情况）,
+"error_content": 错误日志（暂未遇到非空情况）
+}    
+```
 
-成绩更新后**自动发通知到微信** 以节省您宝贵的时间
+错误情况下获取到的json内容为：
 
-## 测试环境
-
-正方教务管理系统 版本 V8.0、V9.0
-
-如果你的教务系统页面与下图所示的页面**完全一致**或**几乎一致**，则代表你可以使用本项目。
-
-<img src="https://raw.githubusercontent.com/xwy231321/ZFCheckScores/main/img/9.png" style="zoom:60%;" />
-
-## 目前支持的功能
-
-1. 主要功能
-
-   1. 每隔 30 分钟自动检测一次成绩是否有更新，若有更新，将通过微信推送及时通知用户。
-
-2. 相较于教务系统增加了哪些功能？
-
-   1. 显示成绩提交时间，即成绩何时被录入教务系统。
-   2. 显示成绩提交人姓名，即成绩由谁录入进教务系统。
-   3. 成绩信息按时间降序排序，确保最新的成绩始终在最上方，提升用户查阅效率。
-   4. 计算 `GPA`
-   5. 计算百分制 `GPA`
-   6. 对于没有分数仅有级别的成绩，例如”及格、良好、优秀“，可以强制显示数字分数。
-   7. 显示未公布成绩的课程，即已选课但尚未出成绩的课程。
-
-## 使用方法
-
-### 1. [Fork](https://github.com/xwy231321/ZFCheckScores/fork "Fork") 本仓库
-
-`Fork` → `Create fork`
-
-### 2. 开启 工作流读写权限
-
-`Settings` → `Actions` → `General` → `Workflow permissions` →`Read and write permissions` →`Save`
-
-### 3. 添加 Secrets
-
-`Settings` → `Secrets and variables` → `Actions` → `Secrets` → `Repository secrets` → `New repository secret` → `Add secret`
-
-> Name = Name，Secret = 例子
-
-| Name     | 例子                        | 说明                                                                      |
-| -------- | --------------------------- | ------------------------------------------------------------------------- |
-| URL      | https://jwglxxfwpt.hebeu.edu.cn/ | 教务系统地址                                                              |
-| USERNAME | 学号                  | 教务系统用户名                                                            |
-| PASSWORD | 对应的密码                | 教务系统密码                                                              |
-| TOKEN    | "server/api/push/"后面的内容        | [Showdoc 的 token](https://push.showdoc.com.cn/#/push "Showdoc 的 token") |
-
-### 4. 开启 Actions
-
-`Actions` → `I understand my workflows, go ahead and enable them` → `CheckScores` → `Enable workflow`
-
-### 5. 运行 程序
-
-`Actions` → `CheckScores` → `Run workflow`
-
-_若你的程序正常运行且未报错，那么在此之后，程序将会每隔 30 分钟自动检测一次成绩是否有更新_
-
-_若你看不懂上述使用方法，你可以查看[详细使用方法](https://nianbroken.github.io/ZFCheckScores/ "详细使用方法")_
-
-## 程序逻辑
-
-1. 清空文件 B 中的内容
-2. 将文件 A 中的内容写入到文件 B
-3. 清空文件 A 中的内容
-4. 将获取到的成绩进行 MD5 加密
-5. 将加密后的成绩写入到文件 A
-6. 比对文件 A 与文件 B 的内容是否一致
-7. 若一致则表示成绩未更新，若不一致则表示成绩已更新
-
-_若是第一次运行程序，上述步骤会执行两遍_
+```
+{
+"error": 错误原因（如：学号或密码错误）
+}
+```
 
 ## 许可证
 
@@ -94,7 +43,3 @@ _若是第一次运行程序，上述步骤会执行两遍_
 [openschoolcn/zfn_api](https://github.com/openschoolcn/zfn_api "openschoolcn/zfn_api")
 
 [https://github.com/NianBroken/ZFCheckScores/](https://github.com/NianBroken/ZFCheckScores/)
-
-## 其他
-
-欢迎提交 `Issues` 和 `Pull requests`
