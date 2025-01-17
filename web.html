@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hue教务个人信息、成绩查询</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            background-color: #f3f3f3;
+            transition: background-color 0.5s, color 0.5s;
+            padding: 20px;
+        }
+
+        .light-mode {
+            background-color: #f3f3f3;
+            color: #333;
+        }
+
+        .dark-mode {
+            background-color: #333;
+            color: #f3f3f3;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.5s, color 0.5s;
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid #ccc;
+        }
+
+        .dark-mode .container {
+            background: #444;
+            border: 1px solid #555;
+        }
+
+        input,
+        button {
+            margin-top: 6px;
+            margin-bottom: 6px;
+            padding: 6px;
+            width: calc(100% - 22px);
+            border: none;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            background-color: #f9f9f9;
+            display: none;
+            position: relative;
+            margin: 1px -10px;
+        }
+
+        .dark-mode .output {
+            background-color: #555;
+            color: #f3f3f3;
+            border: 1px solid #666;
+        }
+
+        .toggle-buttons {
+            display: flex;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .juzhong {
+            text-align: center;
+        }
+
+        .info {
+            border: 1px solid #ccc;
+        }
+
+        .output-content {
+            padding-top: 10px;
+            border-radius: 4px;
+        }
+
+        .containera {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+            }
+        }
+
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .notification-item {
+            margin-bottom: 10px;
+        }
+
+        .notification-item .title {
+            font-weight: bold;
+        }
+
+        .notification-item .content {
+            margin-bottom: 5px;
+        }
+
+        .notification-item .create_time {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .notification-item .type {
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body class="light-mode">
+    <div class="containera">
+        <div class="container">
+            <div class="juzhong">教务成绩快捷查询</div>
+            <input type="text" id="username" placeholder="学号">
+            <input type="password" id="password" placeholder="密码">
+            <button id="loginButton" onclick="login()">查询</button>
+
+            <div class="output" id="output">
+                <div id="currentTimeDisplay" style="margin-bottom: 10px;"></div>
+                <div class="info">
+                    <div class="toggle-buttons">
+                        <button onclick="toggleInfo()">简略个人信息(默认)</button>
+                        <button onclick="toggleInfo()">详细个人信息</button>
+                    </div>
+                    <div class="output-content" id="infoContent">
+                        个人信息：
+                        学号：
+                        班级：
+                        姓名：
+                        当前GPA：
+                        当前百分制GPA：
+                    </div>
+                </div>
+                <div id="gradeContent" class="output-content" style="white-space: pre-line;"></div>
+                <div>未公布成绩的课程：</div>
+                <div id="selected_courses_filtering" class="output-content" style="white-space: pre-line;"></div>
+            </div>
+
+            <button id="see_notice" onclick="showNotifications()" style="display: none;">查看消息</button>
+        </div>
+    </div>
+
+   
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="notificationsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        async function login() {
+            const loginButton = document.getElementById('loginButton');
+            loginButton.disabled = true;
+            loginButton.textContent = '查询中';
+
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const output = document.getElementById('output');
+                const seeNoticeButton = document.getElementById('see_notice');
+
+                const response = await fetch(`http://127.0.0.1:5000/get_data?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+                const jsonData = await response.json();
+
+                if (jsonData.error) {
+                    output.textContent = '错误: ' + jsonData.error;
+                    output.style.display = 'block';
+                    seeNoticeButton.style.display = 'none';
+                } else if (jsonData.allinfo && jsonData.allinfo.msg.includes('成功')) {
+                    output.style.display = 'block';
+                    seeNoticeButton.style.display = 'block';
+
+                    document.getElementById('currentTimeDisplay').innerText = jsonData.current_time;
+
+                    document.getElementById('gradeContent').innerText = jsonData.integrated_grade_info;
+                    document.getElementById('selected_courses_filtering').innerText = jsonData.selected_courses_filtering;
+                    function toggleInfo() {
+                        const buttons = document.querySelectorAll('.toggle-buttons button');
+                        const contentDiv = document.getElementById('infoContent');
+
+                        const clickedButton = event.target.textContent;
+
+                        if (clickedButton === '简略个人信息(默认)') {
+                            contentDiv.innerHTML = jsonData.integrated_info.replace(/\n/g, '<br>');
+                            buttons[0].classList.add('active');
+                            buttons[1].classList.remove('active');
+                        } else if (clickedButton === '详细个人信息') {
+                            let htmlContent = '<table><tr><th></th><th></th></tr>';
+                            const keyMapping = {
+                                "birthday": "生日",
+                                "candidate_number": "考生号",
+                                "class_name": "班级",
+                                "college_name": "学院",
+                                "domicile": null,
+                                "education": "学历",
+                                "email": "邮箱",
+                                "enrollment_date": "入学时间",
+                                "graduation_school": "毕业中学",
+                                "id_number": "身份证号",
+                                "major_name": "专业",
+                                "name": "姓名",
+                                "nationality": "民族",
+                                "phone_number": "电话号",
+                                "politics_status": "政治面貌",
+                                "postal_code": "邮编",
+                                "sid": "学号",
+                                "status": "状态",
+                                "parents_number": "固定电话"
+                            };
+
+                            for (const [key, value] of Object.entries(jsonData.allinfo.data)) {
+                                const displayKey = keyMapping[key] !== undefined ? keyMapping[key] : key;
+                                if (displayKey !== null) {
+                                    htmlContent += `<tr><td>${displayKey}</td><td>${value || '无'}</td></tr>`;
+                                }
+                            }
+                            htmlContent += '</table>';
+                            contentDiv.innerHTML = htmlContent;
+                            buttons[0].classList.remove('active');
+                            buttons[1].classList.add('active');
+                        }
+
+                        window.scrollTo(0, 0);
+                    }
+
+                    document.getElementById('infoContent').innerHTML = jsonData.integrated_info.replace(/\n/g, '<br>');
+                    window.toggleInfo = toggleInfo;
+                    const buttons = document.querySelectorAll('.toggle-buttons button');
+                    buttons[0].classList.add('active');
+
+                    window.jsonData = jsonData;
+                } else {
+                    output.textContent = '失败';
+                    output.style.display = 'block';
+                    seeNoticeButton.style.display = 'none';
+                }
+            } catch (error) {
+                output.textContent = '请求失败: ' + error.message;
+                output.style.display = 'block';
+                seeNoticeButton.style.display = 'none';
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = '查询';
+            }
+        }
+
+
+
+
+        function showNotifications() {
+            document.getElementById('notificationModal').style.display = 'block';
+            fetchNotifications(window.jsonData);
+        }
+
+
+        function closeModal() {
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+
+
+        function fetchNotifications(jsonData) {
+            if (jsonData.notifications && jsonData.notifications.data) {
+                const notificationsContent = document.getElementById('notificationsContent');
+                notificationsContent.innerHTML = '';
+
+                jsonData.notifications.data.forEach((notification, index) => {
+                    const notificationItem = document.createElement('div');
+                    notificationItem.className = 'notification-item';
+
+                    notificationItem.innerHTML = `
+                        <div class="title">通知内容: ${notification.content}</div>
+                        <div class="create_time">时间: ${notification.create_time}</div>
+                        <div class="type">通知类型: ${notification.type}</div>
+                    `;
+
+                    if (index < jsonData.notifications.data.length - 1) {
+                        notificationItem.innerHTML += '<hr>';
+                    }
+
+                    notificationsContent.appendChild(notificationItem);
+                });
+            } else {
+                document.getElementById('notificationsContent').innerHTML = '没有通知';
+            }
+        }
+    </script>
+</body>
+
+</html>
