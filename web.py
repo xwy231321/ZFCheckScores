@@ -17,7 +17,7 @@ from pyquery import PyQuery as pq
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/get_data": {"origins": "https://jw.xwy231321.top"}})
+CORS(app, resources={r"/get_data": {"origins": "*"}})  #此处请替换为对应服务的地址，否则会出现cors报错    
 
 RASPIANIE = [
     ["8:30", "9:15"],
@@ -58,35 +58,35 @@ def login(url, username, password):
         lgn = student_client.login(username, password)
         if lgn["code"] == 1001:
             run_log = "登录需要验证码"
-            print(run_log)
+                        
         elif lgn["code"] == 1002:
             run_log = "用户名或密码错误"
-            print(run_log)
+                 
             return 1002
         elif lgn["code"] == 1003:
             run_log = "请求超时"
-            print(run_log)
-            return 1003
+           
+            return 1003  
         elif lgn["code"] == 1005:
             run_log = "内容为空"
-            print(run_log)
+              
             return 1005
         elif lgn["code"] == 1006:
-            run_log = "cookies过期"
-            print(run_log)
+            run_log = "cookies过期"  
+          
             return 1006
         elif lgn["code"] == 1007:
             run_log = "接口失效"
-            print(run_log)
+               
             return 1007
         elif lgn["code"] == 2333:
             run_log = "系统维护或此服务器被ban"
-            print(run_log)
+         
             return 2333
-        elif lgn["code"] != 1000:
-            print(lgn)
+        elif lgn["code"] != 1000:  
+          
             run_log = lgn["msg"]
-            print(run_log)
+          
             sys.exit(0)
 
     return student_client
@@ -1427,7 +1427,7 @@ class Client:
             self.base_url,
             "xsxy/xsxyqk_cxXsxyqkIndex.html?gnmkdm=N105515&layout=default",
         )
-        url_info = urljoin(self.base_url, "xsxy/xsxyqk_cxJxzxjhxfyqKcxx.html?gnmkdm=N105515")
+        url_info = urljoin(self.base_url, "xsxy/xsxyqk_cxJxzxjhxfyqKcxx.html?gnmkdm=N105515")  
         try:
             req_main = self.sess.get(
                 url_main,
@@ -1451,7 +1451,7 @@ class Client:
                 "statistics": statistics
             }
             return {"code": 1000, "msg": "获取学业情况成功", "data": result}
-        except exceptions.Timeout:
+        except exceptions.Timeout:  
             return {"code": 1003, "msg": "获取学业情况超时"}
         except (
             exceptions.RequestException,
@@ -1460,7 +1460,7 @@ class Client:
         ):
             traceback.print_exc()
             return {
-                "code": 2333,
+                "code": 2333,  
                 "msg": "请重试，若多次失败可能是系统错误维护或需更新接口",
             }
         except Exception as e:  
@@ -1471,7 +1471,7 @@ class Client:
 
 # 定义教务系统的URL、TOKEN等信息
 url = "https://jwglxxfwpt.hebeu.edu.cn/"  
-token = "推送密钥"
+token = "推送密钥" #暂未使用，后期考虑接入推送？但得使用第三方公众号
 
 # 获取当前的北京时间
 def get_beijing_time():  
@@ -1515,7 +1515,7 @@ def get_data():
             return jsonify({"error": "cookies 失效或过期"}), 401
         elif student_client == 1007:
             return jsonify({"error": "接口失效"}), 503
-        elif student_client == 2333:  
+        elif student_client == 2333:    
             return jsonify({"error": "系统维护或服务器被 ban"}), 503
         elif student_client == 1000:  
             # 如果请求获取成功，不需要返回错误信息
@@ -1527,7 +1527,7 @@ def get_data():
         info = get_user_info(student_client, output_type="info")
         
         # 获取完整个人信息
-        integrated_info = get_user_info(student_client, output_type="integrated_info")        
+        integrated_info = get_user_info(student_client, output_type="integrated_info")          
 
         if not info or not integrated_info:
             error_content.append("个人信息为空")
@@ -1555,7 +1555,7 @@ def get_data():
         except Exception as e:
             notifications = "------\n通知信息：\n获取通知信息时出错\n------"
             error_content.append("获取通知信息时出错")
-            run_count = 1
+            run_count = 1  
         time.sleep(0.5) """
 
 
@@ -1589,7 +1589,7 @@ def get_data():
 
         try:
             xueye_gpa=student_client.get_gpa_xueye()  
-        except Exception as e:  
+        except Exception as e:    
             print('获取学业GPA失败\n', e)
             xueye_gpa={"code": 2333, "msg": "获取学业GPA失败"}
 
@@ -1603,7 +1603,7 @@ def get_data():
         return jsonify({
             "allinfo":allinfo,
             "xueye_gpa":xueye_gpa,
-            "current_time": current_time,
+            "current_time": current_time,  
             "integrated_info": integrated_info,
             "integrated_grade_info": integrated_grade_info,
             "selected_courses_filtering": selected_courses_filtering,
