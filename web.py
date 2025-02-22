@@ -1537,7 +1537,11 @@ def get_data():
             run_count = 1
         
         # 获取成绩信息
-        grade = get_grade(student_client, output_type="grade")    
+        try:
+            grade = get_grade(student_client, output_type="grade")
+        except Exception as e:
+            grade = "------\n成绩信息：\n获取成绩时出错\n------"
+            error_content.append("获取成绩时出错")  
         
         if not grade:  
             integrated_grade_info = "------\n成绩信息：\n成绩为空\n------"
