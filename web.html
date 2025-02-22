@@ -5,16 +5,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>hue教务个人信息、成绩查询</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
     <style>
+        :root {
+            --side-margin: 5%;
+        }
+
         body {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
-            align-items: center;
             margin: 0;
             background-color: #f3f3f3;
             transition: background-color 0.5s, color 0.5s;
-            padding: 20px;
+            padding: 10px;
+            font-size: 15px;
+            box-sizing: border-box;
+            width: 100% !important;
+            overflow-x: hidden;
         }
 
         .light-mode {
@@ -29,13 +40,15 @@
 
         .container {
             background: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             transition: background-color 0.5s, color 0.5s;
-            width: 100%;
+            width: calc(100% - 2 * var(--side-margin)) !important;
             max-width: 800px;
             border: 1px solid #ccc;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
 
         .dark-mode .container {
@@ -45,13 +58,13 @@
 
         input,
         button {
-            margin-top: 6px;
-            margin-bottom: 6px;
+            margin: 4px 0;
             padding: 6px;
-            width: calc(100% - 22px);
+            width: 100% !important;
             border: none;
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 0.9em;
         }
 
         button {
@@ -71,15 +84,13 @@
         }
 
         .output {
-            margin-top: 20px;
-            padding: 10px;
+            margin-top: 15px;
+            padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            width: 100%;
             background-color: #f9f9f9;
             display: none;
-            position: relative;
-            margin: 1px -10px;
+            word-wrap: break-word;
         }
 
         .dark-mode .output {
@@ -113,12 +124,30 @@
         }
 
         @media (max-width: 600px) {
+            body {
+                font-size: 13px;
+                padding: 5px;
+            }
+
             .container {
-                width: 90%;
+                padding: 10px;
+                width: 90% !important;
+            }
+
+            .stat-card .number {
+                font-size: 14px !important;
+            }
+
+            .stat-card .label {
+                font-size: 12px !important;
+            }
+
+            .gpa-number {
+                font-size: 20px !important;
             }
         }
 
-
+        /* 模态框样式 */
         .modal {
             display: none;
             position: fixed;
@@ -178,8 +207,280 @@
             font-size: 0.9em;
             color: #555;
         }
+
+        .output-content {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .output-content h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 1rem 0;
+        }
+
+        .output-content pre {
+            background-color: #1f2937;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            overflow-x: auto;
+        }
+
+        .output-content hr {
+            border: 0;
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 1.5rem 0;
+        }
+
+        .stats-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        /* 错误提示 */
+        .error-msg {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+            font-size: 14px;
+        }
+
+        /* GPA展示 */
+        .gpa-banner {
+            background: #eff6ff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .gpa-banner h2 {
+            font-size: 18px;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .gpa-number {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* 分类标题 */
+        .stats-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin: 16px 0;
+        }
+
+        /* 统计卡片布局 */
+        .stats-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .stats-grid-ext {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
+        /* 统计卡片 */
+        .stat-card {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .number {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        /* 配色方案 */
+        .total {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .passed {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .failed {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .missed {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .in-progress {
+            background: #f5f3ff;
+            color: #7c3aed;
+        }
+
+        /* 容器样式 */
+        .info-section {
+            margin: 20px 0;
+        }
+
+        /* 选项卡样式 */
+        .switch-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tab-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #f3f4f6;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .tab-button.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        /* 信息卡片 */
+        .info-card {
+            background: white;
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            line-height: 1.6;
+        }
+
+        /* 简略信息样式 */
+        .info-card p {
+            margin: 0;
+            padding: 4px 0;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        /* 详细信息表格 */
+        .info-card table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .info-card td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        .info-card td:first-child {
+            color: #6b7280;
+            width: 120px;
+        }
+
+        .info-card tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 640px) {
+            .switch-tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                width: 80%;
+            }
+
+            .info-card {
+                padding: 11px;
+            }
+
+            .info-card td {
+                padding: 5px;
+                font-size: 12px;
+            }
+        }
+
+        .stats-container {
+            padding: 15px;
+            margin: 12px 0;
+        }
+
+        .stats-grid,
+        .stats-grid-ext {
+            gap: 8px;
+        }
+
+        .stat-card {
+            min-width: unset;
+            padding: 8px;
+        }
+
+        /* 链接容器调整 */
+        .link-container {
+            flex-direction: column;
+            text-align: center;
+            padding: 10px !important;
+        }
+
+        .link-container img {
+            margin: 0 auto 10px !important;
+        }
+
+        /* 备案信息调整 */
+        .beian-container {
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+            text-align: center;
+            padding: 10px !important;
+        }
+
+        .beian-container a {
+            flex: 1 1 45%;
+            min-width: 200px;
+            margin: 5px;
+            padding: 5px;
+        }
+
     </style>
+
 </head>
+
 
 <body class="light-mode">
     <div class="containera">
@@ -190,176 +491,187 @@
             <button id="loginButton" onclick="login()">查询</button>
 
             <div class="output" id="output">
-                <div id="currentTimeDisplay" style="margin-bottom: 10px;"></div>
-                <div class="info">
-                    <div class="toggle-buttons">
-                        <button onclick="toggleInfo()">简略个人信息(默认)</button>
-                        <button onclick="toggleInfo()">详细个人信息</button>
-                    </div>
-                    <div class="output-content" id="infoContent">
-                        个人信息：
-                        学号：
-                        班级：
-                        姓名：
-                        当前GPA：
-                        当前百分制GPA：
-                    </div>
-                </div>
-                <div id="gradeContent" class="output-content" style="white-space: pre-line;"></div>
+                <div id="currentTimeDisplay" style="margin-bottom: 8px;"></div>
+                <div id="gpaStats" class="space-y-6"></div>
+                <div id="gradeContent" class="output-content"></div>
                 <div>未公布成绩的课程：</div>
-                <div id="selected_courses_filtering" class="output-content" style="white-space: pre-line;"></div>
+                <div id="selected_courses_filtering" class="output-content"></div>
             </div>
+        </div>
 
-            <button id="see_notice" onclick="showNotifications()" style="display: none;">查看消息</button>
+        <div class="link-container">
+            <a href="./photo.html" target="_blank">
+                <img src="./xcx.jpg" style="width: 80px;">
+                <p style="font-size: 0.9em; margin: 10px 0">如遇报错请使用小程序</p>
+            </a>
+        </div>
+
+        <div class="beian-container">
+            <a href="https://mp.weixin.qq.com/s/4RYQsr-3mTSAQ6aYvYDBuw" target="_blank">
+                <span>隐私政策&使用协议</span>
+            </a>
+            <a href="https://us.umami.is/share/EBx9FqEWO0oBXRoz/xwy231321.top" target="_blank">
+                <span>访问数据</span>
+            </a>
+            <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank">
+                <span>冀ICP备2024074352号</span>
+            </a>
+            <a href="https://beian.mps.gov.cn/#/query/webSearch?code=13042002000654" target="_blank">
+                <img src="https://beian.mps.gov.cn/web/assets/logo01.6189a29f.png" style="width: 14px;">
+                <span>冀公网安备13042002000654号</span>
+            </a>
         </div>
     </div>
 
-   
-    <div id="notificationModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <div id="notificationsContent"></div>
-        </div>
-    </div>
+
 
     <script>
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
+        let currentUserData = null;
+        function toggleInfo(event) {
+            const buttons = document.querySelectorAll('.tab-button');
+            const contentDiv = document.getElementById('infoContent');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            if (event.target.textContent === '简略信息') {  
+                contentDiv.innerHTML = `<p>${currentUserData.integrated_info.replace(/\n/g, '</p><p>')}</p>`;
+            } else {
+                const keyMap = {  
+                    "sid": "学号", "class_name": "班级", "name": "姓名",
+                    "college_name": "学院", "major_name": "专业", "education": "学历",
+                    "status": "在校状态", "enrollment_date": "入学时间", "id_number": "身份证号",
+                    "phone_number": "联系电话", "email": "电子邮箱", "birthday": "出生日期",
+                    "politics_status": "政治面貌", "nationality": "民族", "postal_code": "邮政编码",
+                    "candidate_number": "考生编号", "graduation_school": "毕业学校"
+                };
+                let tableHTML = '<table>';
+                for (const [key, label] of Object.entries(keyMap)) {  
+                    tableHTML += `
+                        <tr>
+                            <td>${label}</td>
+                            <td>${currentUserData.allinfo[key] || '无'}</td>
+                        </tr>
+                    `;
+                }
+                tableHTML += '</table>';
+                contentDiv.innerHTML = tableHTML;
+            }
         }
-
+        marked.setOptions({
+            highlight: function (code) {
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true
+        });
         async function login() {
             const loginButton = document.getElementById('loginButton');
-            loginButton.disabled = true;
-            loginButton.textContent = '查询中';
-
             try {
+                loginButton.disabled = true;
+                loginButton.textContent = '查询中';
+                const existingInfo = document.querySelector('.dynamic-info');
+                if (existingInfo) existingInfo.remove();
                 const username = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
                 const output = document.getElementById('output');
-                const seeNoticeButton = document.getElementById('see_notice');
-
-                const response = await fetch(`http://127.0.0.1:5000/get_data?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+                const response = await fetch(`http://127.0.0.1:5000/get_data?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);  //请更换成自己搭建好的api地址
                 const jsonData = await response.json();
-
                 if (jsonData.error) {
                     output.textContent = '错误: ' + jsonData.error;
                     output.style.display = 'block';
-                    seeNoticeButton.style.display = 'none';
-                } else if (jsonData.allinfo && jsonData.allinfo.msg.includes('成功')) {
-                    output.style.display = 'block';
-                    seeNoticeButton.style.display = 'block';
-
-                    document.getElementById('currentTimeDisplay').innerText = jsonData.current_time;
-
-                    document.getElementById('gradeContent').innerText = jsonData.integrated_grade_info;
-                    document.getElementById('selected_courses_filtering').innerText = jsonData.selected_courses_filtering;
-                    function toggleInfo() {
-                        const buttons = document.querySelectorAll('.toggle-buttons button');
-                        const contentDiv = document.getElementById('infoContent');
-
-                        const clickedButton = event.target.textContent;
-
-                        if (clickedButton === '简略个人信息(默认)') {
-                            contentDiv.innerHTML = jsonData.integrated_info.replace(/\n/g, '<br>');
-                            buttons[0].classList.add('active');
-                            buttons[1].classList.remove('active');
-                        } else if (clickedButton === '详细个人信息') {
-                            let htmlContent = '<table><tr><th></th><th></th></tr>';
-                            const keyMapping = {
-                                "birthday": "生日",
-                                "candidate_number": "考生号",
-                                "class_name": "班级",
-                                "college_name": "学院",
-                                "domicile": null,
-                                "education": "学历",
-                                "email": "邮箱",
-                                "enrollment_date": "入学时间",
-                                "graduation_school": "毕业中学",
-                                "id_number": "身份证号",
-                                "major_name": "专业",
-                                "name": "姓名",
-                                "nationality": "民族",
-                                "phone_number": "电话号",
-                                "politics_status": "政治面貌",
-                                "postal_code": "邮编",
-                                "sid": "学号",
-                                "status": "状态",
-                                "parents_number": "固定电话"
-                            };
-
-                            for (const [key, value] of Object.entries(jsonData.allinfo.data)) {
-                                const displayKey = keyMapping[key] !== undefined ? keyMapping[key] : key;
-                                if (displayKey !== null) {
-                                    htmlContent += `<tr><td>${displayKey}</td><td>${value || '无'}</td></tr>`;
-                                }
-                            }
-                            htmlContent += '</table>';
-                            contentDiv.innerHTML = htmlContent;
-                            buttons[0].classList.remove('active');
-                            buttons[1].classList.add('active');
-                        }
-
-                        window.scrollTo(0, 0);
-                    }
-
-                    document.getElementById('infoContent').innerHTML = jsonData.integrated_info.replace(/\n/g, '<br>');
-                    window.toggleInfo = toggleInfo;
-                    const buttons = document.querySelectorAll('.toggle-buttons button');
-                    buttons[0].classList.add('active');
-
-                    window.jsonData = jsonData;
-                } else {
-                    output.textContent = '失败';
-                    output.style.display = 'block';
-                    seeNoticeButton.style.display = 'none';
+                    return;
                 }
+                currentUserData = {
+                    integrated_info: jsonData.integrated_info,
+                    allinfo: jsonData.allinfo.data
+                };
+                output.style.display = 'block';  
+                document.getElementById('currentTimeDisplay').innerText = jsonData.current_time;
+                document.getElementById('gradeContent').innerHTML = marked.parse(jsonData.integrated_grade_info?.replace(/\\n/g, '\n') || '');  
+                document.getElementById('selected_courses_filtering').innerHTML = marked.parse(jsonData.selected_courses_filtering?.replace(/\\n/g, '\n') || '');
+                const infoSection = document.createElement('div');
+                infoSection.className = 'dynamic-info';
+                infoSection.innerHTML = `
+                    <div class="info-section">
+                        <div class="switch-tabs">
+                            <button class="tab-button active" onclick="toggleInfo(event)">简略信息</button>
+                            <button class="tab-button" onclick="toggleInfo(event)">详细信息</button>
+                        </div>
+                        <div class="info-card" id="infoContent"></div>
+                    </div>
+                `;
+                output.insertBefore(infoSection, document.getElementById('gpaStats'));  
+                infoSection.querySelector('.tab-button').click();  
+                const gpaData = jsonData.xueye_gpa || {};
+                const gpaContainer = document.getElementById('gpaStats');
+                let gpaHTML = '';
+
+                if (gpaData.code === 1000) {
+                    const stats = gpaData.data.statistics;
+                    gpaHTML = `
+                    <div class="stats-container">
+                        <!-- GPA 核心指标 -->
+                        <div class="gpa-banner">    
+                            <h2>GPA：
+                                <span class="gpa-number">${stats.gpa.toFixed(4)}</span>
+                            </h2>  
+                        </div>
+
+                        <!-- 计划内课程 -->
+                        <div class="stats-section">
+                            <h3>计划内课程</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card total">
+                                    <div class="label">总课程数</div>  
+                                    <div class="number">${stats.planed_courses.total}</div>
+                                </div>
+                                <div class="stat-card passed">
+                                    <div class="label">已通过</div>
+                                    <div class="number">${stats.planed_courses.passed}</div>
+                                </div>
+                                <div class="stat-card failed">
+                                    <div class="label">未通过</div>
+                                    <div class="number">${stats.planed_courses.failed}</div>
+                                </div>
+                                <div class="stat-card missed">  
+                                    <div class="label">未修课程</div>
+                                    <div class="number">${stats.planed_courses.missed}</div>
+                                </div>
+                                <div class="stat-card in-progress">
+                                    <div class="label">在读课程</div>  
+                                    <div class="number">${stats.planed_courses.in}</div>
+                                </div>
+                            </div>
+                        </div>  
+
+                        <!-- 计划外课程 -->
+                        <div class="stats-section">
+                            <h3>计划外课程</h3>
+                            <div class="stats-grid-ext">
+                                <div class="stat-card passed">
+                                    <div class="label">已通过</div>  
+                                    <div class="number">${stats.unplaned_courses.passed}</div>
+                                </div>
+                                <div class="stat-card failed">
+                                    <div class="label">未通过</div>
+                                    <div class="number">${stats.unplaned_courses.failed}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    gpaHTML = `  
+                    <div class="bg-red-50 rounded-xl p-4 text-red-700 border border-red-200">
+                        ${gpaData.msg} [错误代码：${gpaData.code}]
+                    </div>
+                    `;
+                }
+                gpaContainer.innerHTML = gpaHTML;    
             } catch (error) {
-                output.textContent = '请求失败: ' + error.message;
-                output.style.display = 'block';
-                seeNoticeButton.style.display = 'none';
+                console.error('请求失败:', error);  
+                alert('请求失败: ' + error.message);
             } finally {
                 loginButton.disabled = false;
                 loginButton.textContent = '查询';
-            }
-        }
-
-
-
-
-        function showNotifications() {
-            document.getElementById('notificationModal').style.display = 'block';
-            fetchNotifications(window.jsonData);
-        }
-
-
-        function closeModal() {
-            document.getElementById('notificationModal').style.display = 'none';
-        }
-
-
-        function fetchNotifications(jsonData) {
-            if (jsonData.notifications && jsonData.notifications.data) {
-                const notificationsContent = document.getElementById('notificationsContent');
-                notificationsContent.innerHTML = '';
-
-                jsonData.notifications.data.forEach((notification, index) => {
-                    const notificationItem = document.createElement('div');
-                    notificationItem.className = 'notification-item';
-
-                    notificationItem.innerHTML = `
-                        <div class="title">通知内容: ${notification.content}</div>
-                        <div class="create_time">时间: ${notification.create_time}</div>
-                        <div class="type">通知类型: ${notification.type}</div>
-                    `;
-
-                    if (index < jsonData.notifications.data.length - 1) {
-                        notificationItem.innerHTML += '<hr>';
-                    }
-
-                    notificationsContent.appendChild(notificationItem);
-                });
-            } else {
-                document.getElementById('notificationsContent').innerHTML = '没有通知';
             }
         }
     </script>
