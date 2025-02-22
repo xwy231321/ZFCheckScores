@@ -17,7 +17,7 @@ from pyquery import PyQuery as pq
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/get_data": {"origins": "*"}})#此处请替换为对应服务的地址，否则会出现cors报错
+CORS(app, resources={r"/get_data": {"origins": "https://jw.xwy231321.top"}})
 
 RASPIANIE = [
     ["8:30", "9:15"],
@@ -58,26 +58,35 @@ def login(url, username, password):
         lgn = student_client.login(username, password)
         if lgn["code"] == 1001:
             run_log = "登录需要验证码"
+            print(run_log)
         elif lgn["code"] == 1002:
             run_log = "用户名或密码错误"
+            print(run_log)
             return 1002
         elif lgn["code"] == 1003:
-            run_log = "请求超时" 
+            run_log = "请求超时"
+            print(run_log)
             return 1003
         elif lgn["code"] == 1005:
             run_log = "内容为空"
+            print(run_log)
             return 1005
         elif lgn["code"] == 1006:
             run_log = "cookies过期"
+            print(run_log)
             return 1006
         elif lgn["code"] == 1007:
             run_log = "接口失效"
+            print(run_log)
             return 1007
         elif lgn["code"] == 2333:
             run_log = "系统维护或此服务器被ban"
+            print(run_log)
             return 2333
         elif lgn["code"] != 1000:
+            print(lgn)
             run_log = lgn["msg"]
+            print(run_log)
             sys.exit(0)
 
     return student_client
@@ -205,7 +214,7 @@ def get_user_info(student_client, output_type="none"):
                 # 获取当前百分制GPA
                 percentage_gpa = get_grade(student_client, output_type="percentage_gpa")
                 # 整合GPA信息为字符串格式
-                gpa_info = f"\n当前GPA：{gpa}\n" f"当前百分制GPA：{percentage_gpa}"
+                gpa_info = f"\n当前GPA：{gpa}\n" f"当前百分制GPA：{percentage_gpa}\n此项结果使用[(学分*绩点)的总和/学分总和]计算而来\n与学校学生学业情况的绩点存在差异\n请以学生学业情况为准"
                 # 将个人信息和GPA信息整合为完整字符串
                 integrated_info = f"{info}{gpa_info}"
 
@@ -256,6 +265,7 @@ def get_grade(student_client, output_type="none"):
         if grade:
             # 过滤出成绩大于等于60分的课程
             filtered_grade = list(filter(lambda x: float(x["percentage_grades"]) >= 60, grade))
+            
 
             # 遍历 grade 中的每个字典，将 title 中的中文括号替换为英文括号
             for course_data_grade in grade:
@@ -303,7 +313,7 @@ def get_grade(student_client, output_type="none"):
             integrated_grade_info = "------\n成绩信息："
 
             # 遍历前8条成绩信息
-            for _, course in enumerate(sorted_grade[:8]):
+            for _, course in enumerate(sorted_grade[:]):
 
                 # 如果成绩非数字，如及格、良好、中等、优秀等，则显示百分制成绩
                 if str(course["grade"]).isdigit():
@@ -751,6 +761,7 @@ class Client:
             display_statistics = doc_main("div#alertBox").text().replace(" ", "").replace("\n", "")
             sid = doc_main("input#xh_id").attr("value")
             statistics = self.get_academia_statistics(display_statistics)
+
             type_statistics = self.get_academia_type_statistics(req_main.text)
             details = {}
             for type in type_statistics.keys():
@@ -1410,21 +1421,70 @@ class Client:
 
 
 
+    def get_gpa_xueye(self):
+        """获取学业生涯情况"""
+        url_main = urljoin(
+            self.base_url,
+            "xsxy/xsxyqk_cxXsxyqkIndex.html?gnmkdm=N105515&layout=default",
+        )
+        url_info = urljoin(self.base_url, "xsxy/xsxyqk_cxJxzxjhxfyqKcxx.html?gnmkdm=N105515")
+        try:
+            req_main = self.sess.get(
+                url_main,
+                headers=self.headers,
+                cookies=self.cookies,
+                timeout=10,
+                stream=True,
+            )
+            if req_main.status_code != 200:
+                return {"code": 2333, "msg": "教务系统挂了"}
+            doc_main = pq(req_main.text)
+            if doc_main("h5").text() == "用户登录":
+                return {"code": 1006, "msg": "未登录或已过期，请重新登录"}
+            if str(doc_main("div.alert-danger")) != "":
+                return {"code": 998, "msg": doc_main("div.alert-danger").text()}
+            
+            display_statistics = doc_main("div#alertBox").text().replace(" ", "").replace("\n", "")
+            
+            statistics = self.get_academia_statistics(display_statistics)
+            result = {
+                "statistics": statistics
+            }
+            return {"code": 1000, "msg": "获取学业情况成功", "data": result}
+        except exceptions.Timeout:
+            return {"code": 1003, "msg": "获取学业情况超时"}
+        except (
+            exceptions.RequestException,
+            json.decoder.JSONDecodeError,
+            AttributeError,
+        ):
+            traceback.print_exc()
+            return {
+                "code": 2333,
+                "msg": "请重试，若多次失败可能是系统错误维护或需更新接口",
+            }
+        except Exception as e:  
+            traceback.print_exc()
+            return {"code": 999, "msg": "获取学业情况时未记录的错误：" + str(e)}
+
+
+
 # 定义教务系统的URL、TOKEN等信息
-url = "https://jwglxxfwpt.hebeu.edu.cn/"
-token = "推送密钥"  #暂未使用，后期考虑接入推送？但得使用第三方公众号
+url = "https://jwglxxfwpt.hebeu.edu.cn/"  
+token = "推送密钥"
 
 # 获取当前的北京时间
-def get_beijing_time():
+def get_beijing_time():  
     beijing_tz = pytz.timezone('Asia/Shanghai')
     return datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
 
 @app.route('/get_data', methods=['GET'])
 def get_data():
+    
     try:
         # 从URL参数中获取username和password
         username = request.args.get('username')
-        password = request.args.get('password')
+        password = request.args.get('password')  
         
         if not username or not password:
             return jsonify({"error": "Missing username or password"})
@@ -1438,6 +1498,7 @@ def get_data():
         
         # 登录
         student_client = login(url, username, password)
+        
         if student_client == 998:
             return jsonify({"error": "网页弹窗未处理内容"}), 400
         elif student_client == 999:
@@ -1454,9 +1515,9 @@ def get_data():
             return jsonify({"error": "cookies 失效或过期"}), 401
         elif student_client == 1007:
             return jsonify({"error": "接口失效"}), 503
-        elif student_client == 2333:
+        elif student_client == 2333:  
             return jsonify({"error": "系统维护或服务器被 ban"}), 503
-        elif student_client == 1000:
+        elif student_client == 1000:  
             # 如果请求获取成功，不需要返回错误信息
             pass
         elif student_client == 1001:
@@ -1466,8 +1527,7 @@ def get_data():
         info = get_user_info(student_client, output_type="info")
         
         # 获取完整个人信息
-        integrated_info = get_user_info(student_client, output_type="integrated_info")
-        
+        integrated_info = get_user_info(student_client, output_type="integrated_info")        
 
         if not info or not integrated_info:
             error_content.append("个人信息为空")
@@ -1477,9 +1537,9 @@ def get_data():
             run_count = 1
         
         # 获取成绩信息
-        grade = get_grade(student_client, output_type="grade")
+        grade = get_grade(student_client, output_type="grade")    
         
-        if not grade:
+        if not grade:  
             integrated_grade_info = "------\n成绩信息：\n成绩为空\n------"
             run_log += "成绩为空\n"
             run_count = 1
@@ -1488,24 +1548,61 @@ def get_data():
             error_content.append("获取成绩时出错")
             run_count = 1
     
-        """ 获取个人信息 """
-        notifications = student_client.get_notifications()
-        allinfo=student_client.get_info()
 
-        # 获取整合后的成绩信息
-        integrated_grade_info = get_grade(student_client, output_type="integrated_grade_info")
-        
+        """ 获取个人信息 """
+        """ try:
+            notifications = student_client.get_notifications()
+        except Exception as e:
+            notifications = "------\n通知信息：\n获取通知信息时出错\n------"
+            error_content.append("获取通知信息时出错")
+            run_count = 1
+        time.sleep(0.5) """
+
+
+        try:
+            # 获取全部信息
+            allinfo=student_client.get_info()  
+        except Exception as e:
+            allinfo = "------\n全部信息：\n获取全部信息时出错\n------"
+            error_content.append("获取全部信息时出错")
+            run_count = 1
+        time.sleep(0.5)
+
+
+        try:
+            # 获取整合后的成绩信息
+            integrated_grade_info = get_grade(student_client, output_type="integrated_grade_info")
+        except Exception as e:
+            integrated_grade_info = "------\n成绩信息：\n获取成绩时出错\n------"
+            error_content.append("获取成绩时出错")
+            run_count = 1
+        time.sleep(0.5)
+
+
+        try:
         # 获取未公布成绩的课程和异常的课程
-        selected_courses_filtering = get_selected_courses(student_client)
+            selected_courses_filtering = get_selected_courses(student_client)
+        except Exception as e:
+            selected_courses_filtering = "------\n未公布课程：\n获取未公布课程时出错\n------"
+            error_content.append("获取未公布课程时出错")
         
-        # 合并所有输出内容
-        #output_content = current_time +  "\n查询结果：\n" + integrated_info + "\n成绩\n" + integrated_grade_info + "\n未公布课程\n" + selected_courses_filtering
-        
-        
+
+        try:
+            xueye_gpa=student_client.get_gpa_xueye()  
+        except Exception as e:  
+            print('获取学业GPA失败\n', e)
+            xueye_gpa={"code": 2333, "msg": "获取学业GPA失败"}
+
+
+
+                
+        # 打印运行日志和错误内容
+        print("运行日志:", run_log)
+        print("错误内容:", error_content)  
         # 返回合并后的内容
         return jsonify({
             "allinfo":allinfo,
-            "notifications": notifications,
+            "xueye_gpa":xueye_gpa,
             "current_time": current_time,
             "integrated_info": integrated_info,
             "integrated_grade_info": integrated_grade_info,
@@ -1513,12 +1610,24 @@ def get_data():
             "run_log": run_log,
             "error_content": error_content
         })
-    except Exception as e:
+        
+    except Exception as e:  
         # 返回错误信息
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
+
 @app.route('/', methods=['GET'])
 def index():
-    return jsonify({"msg": "Hello World!"})
+    return jsonify({"msg": "Hello World!"})  
+    
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+@app.after_request
+def after_request(response):    
+    logging.debug(response.headers)
+    return response
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=False, host='0.0.0.0', port=5000)
